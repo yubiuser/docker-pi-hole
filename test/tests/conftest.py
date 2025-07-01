@@ -21,39 +21,33 @@ def run_bash(self, command, *args, **kwargs):
 testinfra.backend.docker.DockerBackend.run = run_bash
 
 
-@pytest.fixture()
-def args_env():
-    return '-e TZ="Europe/London" -e FTLCONF_dns_upstreams="8.8.8.8"'
-
-
-@pytest.fixture()
-def args(args_env):
-    return "{}".format(args_env)
-
-
 # scope='session' uses the same container for all the tests;
 # scope='function' uses a new container per test function.
 @pytest.fixture(scope="function")
-def docker(request, args):
-    # Get additional env vars from parameterization
-    extra_env_vars = getattr(request, "param", [])
-    if isinstance(extra_env_vars, str):
-        extra_env_vars = [extra_env_vars]
-
+def docker(request):
     # build the docker run command with args
     cmd = ["docker", "run", "-d", "-t"]
 
-    # add args if provided
-    if args.strip():
-        cmd.extend(args.split())
+    # Get env vars from parameterization
+    env_vars = getattr(request, "param", [])
+    if isinstance(env_vars, str):
+        env_vars = [env_vars]
 
     # add parameterized environment variables
-    for env_var in extra_env_vars:
+    for env_var in env_vars:
         cmd.extend(["-e", env_var])
 
     # ensure PYTEST=1 is set
     if not any("PYTEST=1" in arg for arg in cmd):
         cmd.extend(["-e", "PYTEST=1"])
+
+    # add default TZ if not already set
+    if not any("TZ=" in arg for arg in cmd):
+        cmd.extend(["-e", 'TZ="Europe/London"'])
+
+    # add default TZ if not already set
+    if not any("TZ=" in arg for arg in cmd):
+        cmd.extend(["-e", 'TZ="Europe/London"'])
 
     # add the image name
     cmd.append("pihole:CI_container")
