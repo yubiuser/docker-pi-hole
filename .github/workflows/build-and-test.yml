@@ -3,7 +3,28 @@ on:
   pull_request:
 
 jobs:
-  test:
+  smoke-tests:
+    outputs:
+      GIT_TAG: ${{ steps.variables.outputs.GIT_TAG }}
+      GIT_BRANCH: ${{ steps.variables.outputs.GIT_BRANCH }}
+    runs-on: ubuntu-latest
+    steps:
+      -
+        name: Checkout code
+        uses: actions/checkout@v4.1.7
+      -
+        name: "Calculate required variables"
+        id: variables
+        run: |
+          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD | sed "s/\//-/g")
+          GIT_TAG=$(git describe --tags --exact-match 2>/dev/null || true)
+          # If no tag is found, use the branch name as the tag
+          GIT_TAG="${GIT_TAG:-$GIT_BRANCH}"
+          echo "GIT_BRANCH=${GIT_BRANCH}" >> $GITHUB_OUTPUT
+          echo "GIT_TAG=${GIT_TAG}" >> $GITHUB_OUTPUT
+
+  build-and-test:
+    needs: smoke-tests
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -21,19 +42,47 @@ jobs:
             runner: ubuntu-24.04-arm
           - platform: linux/riscv64
             runner: ubuntu-24.04-arm
+    env:
+      CI_ARCH: ${{ matrix.platform }}
+      GIT_BRANCH: ${{ needs.smoke-tests.outputs.GIT_BRANCH }}
+      GIT_TAG: ${{ needs.smoke-tests.outputs.GIT_TAG }}
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v4
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
+    # -
+    #   name: Build docker test image
+    #   # Creates an image and load it into the local Docker daemon
+    #   run: |
+    #       docker buildx build \
+    #         --platform ${{ matrix.platform }} \
+    #         --pull \
+    #         --load \
+    #         --build-arg "CI_ARCH=${{ env.CI_ARCH }}" \
+    #         --build-arg "GIT_BRANCH=${{ env.GIT_BRANCH }}" \
+    #         --build-arg "GIT_TAG=${{ env.GIT_TAG }}" \
+    #         --build-arg "BUILD_OPTS=${{ matrix.build_opts }}" \
+    #         --tag pihole-docker:testimage \
+    #         --file /src/Dockerfile .
+
+    - name: Set up Python
+      uses: actions/setup-python@v5.6.0
       with:
-        platforms: ${{ matrix.platform }}
-
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Run Tests
+        python-version: "3.13"
+    
+    - name: Run black formatter
       run: |
-        echo "Building image to test"
-        PLATFORM=${{ matrix.platform }} ./build-and-test.sh
+        pip install black
+        black --check --diff test/tests/
+
+    - name: Install wheel
+      run:  pip install wheel
+
+    - name: Install dependencies
+      run: pip install -r test/requirements.txt
+
+    - name: Test with tox
+      run: |
+        PLATFORM=${{ env.CI_ARCH }} tox -c test/tox.ini
