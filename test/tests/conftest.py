@@ -1,6 +1,24 @@
 import pytest
 import subprocess
 import testinfra
+import testinfra.backend.docker
+
+
+# Monkeypatch sh to bash, if they ever support non hard code /bin/sh this can go away
+# https://github.com/pytest-dev/pytest-testinfra/blob/master/testinfra/backend/docker.py
+def run_bash(self, command, *args, **kwargs):
+    cmd = self.get_command(command, *args)
+    if self.user is not None:
+        out = self.run_local(
+            "docker exec -u %s %s /bin/bash -c %s", self.user, self.name, cmd
+        )
+    else:
+        out = self.run_local("docker exec %s /bin/bash -c %s", self.name, cmd)
+    out.command = self.encode(cmd)
+    return out
+
+
+testinfra.backend.docker.DockerBackend.run = run_bash
 
 
 @pytest.fixture()
