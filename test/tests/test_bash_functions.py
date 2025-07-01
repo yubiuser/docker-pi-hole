@@ -1,13 +1,15 @@
 import pytest
 
 
-@pytest.mark.docker_env_vars("FTLCONF_webserver_port=999")
+@pytest.mark.parametrize("docker", ["FTLCONF_webserver_port=999"], indirect=True)
 def test_ftlconf_webserver_port(docker):
     func = docker.run("pihole-FTL --config webserver.port")
     assert "999" in func.stdout
 
 
-@pytest.mark.docker_env_vars("FTLCONF_dns_upstreams=1.2.3.4;5.6.7.8#1234")
+@pytest.mark.parametrize(
+    "docker", ["FTLCONF_dns_upstreams=1.2.3.4;5.6.7.8#1234"], indirect=True
+)
 def test_ftlconf_dns_upstreams(docker):
     func = docker.run("pihole-FTL --config dns.upstreams")
     assert "[ 1.2.3.4, 5.6.7.8#1234 ]" in func.stdout
@@ -21,7 +23,9 @@ def test_random_password_assigned_fresh_start(docker):
     assert "assigning random password:" in func.stdout
 
 
-@pytest.mark.docker_env_vars("FTLCONF_webserver_api_password=1234567890")
+@pytest.mark.parametrize(
+    "docker", ["FTLCONF_webserver_api_password=1234567890"], indirect=True
+)
 def test_password_set_by_envvar(docker):
     func = docker.run(CMD_SETUP_WEB_PASSWORD)
     assert "Assigning password defined by Environment Variable" in func.stdout

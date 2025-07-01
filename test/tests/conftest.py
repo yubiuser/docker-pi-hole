@@ -31,20 +31,14 @@ def args(args_env):
     return "{}".format(args_env)
 
 
-@pytest.fixture()
-def test_args():
-    """test override fixture to provide arguments separate from our core args"""
-    return ""
-
-
 # scope='session' uses the same container for all the tests;
 # scope='function' uses a new container per test function.
 @pytest.fixture(scope="function")
 def docker(request, args):
-    # Check if the test has a docker_env_vars marker
-    env_vars = []
-    for marker in request.node.iter_markers("docker_env_vars"):
-        env_vars.extend(marker.args)
+    # Get additional env vars from parameterization
+    extra_env_vars = getattr(request, "param", [])
+    if isinstance(extra_env_vars, str):
+        extra_env_vars = [extra_env_vars]
 
     # build the docker run command with args
     cmd = ["docker", "run", "-d", "-t"]
@@ -53,8 +47,8 @@ def docker(request, args):
     if args.strip():
         cmd.extend(args.split())
 
-    # add environment variables from marker
-    for env_var in env_vars:
+    # add parameterized environment variables
+    for env_var in extra_env_vars:
         cmd.extend(["-e", env_var])
 
     # ensure PYTEST=1 is set
