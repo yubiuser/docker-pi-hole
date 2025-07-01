@@ -40,17 +40,22 @@ def test_args():
 # scope='session' uses the same container for all the tests;
 # scope='function' uses a new container per test function.
 @pytest.fixture(scope="function")
-def docker(request, test_args, args):
-    # build the docker run command with args and test_args
+def docker(request, args):
+    # Check if the test has a docker_env_vars marker
+    env_vars = []
+    for marker in request.node.iter_markers("docker_env_vars"):
+        env_vars.extend(marker.args)
+
+    # build the docker run command with args
     cmd = ["docker", "run", "-d", "-t"]
 
     # add args if provided
     if args.strip():
         cmd.extend(args.split())
 
-    # add test_args if provided
-    if test_args.strip():
-        cmd.extend(test_args.split())
+    # add environment variables from marker
+    for env_var in env_vars:
+        cmd.extend(["-e", env_var])
 
     # ensure PYTEST=1 is set
     if not any("PYTEST=1" in arg for arg in cmd):
