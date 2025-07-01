@@ -1,4 +1,5 @@
 import pytest
+import os
 
 
 @pytest.mark.parametrize("docker", ["PIHOLE_UID=456"], indirect=True)
@@ -17,6 +18,15 @@ def test_pihole_ftl_version(docker):
     func = docker.run("pihole-FTL -vv")
     assert func.rc == 0
     assert "Version:" in func.stdout
+
+
+def test_pihole_ftl_architecture(docker):
+    func = docker.run("pihole-FTL -vv")
+    assert func.rc == 0
+    assert "Architecture:" in func.stdout
+    # Get the expected architecture from PLATFORM environment variable
+    platform = os.environ.get("PLATFORM")
+    assert platform in func.stdout
 
 
 # Wait 5 seconds for startup, then kill the start.sh script

@@ -2,6 +2,7 @@ import pytest
 import subprocess
 import testinfra
 import testinfra.backend.docker
+import os
 
 
 # Monkeypatch sh to bash, if they ever support non hard code /bin/sh this can go away
@@ -25,8 +26,11 @@ testinfra.backend.docker.DockerBackend.run = run_bash
 # scope='function' uses a new container per test function.
 @pytest.fixture(scope="function")
 def docker(request):
+    # Get platform from environment variable
+    platform = os.environ.get("PLATFORM")
+
     # build the docker run command with args
-    cmd = ["docker", "run", "-d", "-t"]
+    cmd = ["docker", "run", "--platform", platform, "-d", "-t"]
 
     # Get env vars from parameterization
     env_vars = getattr(request, "param", [])
@@ -40,10 +44,6 @@ def docker(request):
     # ensure PYTEST=1 is set
     if not any("PYTEST=1" in arg for arg in cmd):
         cmd.extend(["-e", "PYTEST=1"])
-
-    # add default TZ if not already set
-    if not any("TZ=" in arg for arg in cmd):
-        cmd.extend(["-e", 'TZ="Europe/London"'])
 
     # add default TZ if not already set
     if not any("TZ=" in arg for arg in cmd):
