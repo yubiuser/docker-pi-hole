@@ -3,28 +3,7 @@ on:
   pull_request:
 
 jobs:
-  smoke-tests:
-    outputs:
-      GIT_TAG: ${{ steps.variables.outputs.GIT_TAG }}
-      GIT_BRANCH: ${{ steps.variables.outputs.GIT_BRANCH }}
-    runs-on: ubuntu-latest
-    steps:
-      -
-        name: Checkout code
-        uses: actions/checkout@v4.1.7
-      -
-        name: "Calculate required variables"
-        id: variables
-        run: |
-          GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD | sed "s/\//-/g")
-          GIT_TAG=$(git describe --tags --exact-match 2>/dev/null || true)
-          # If no tag is found, use the branch name as the tag
-          GIT_TAG="${GIT_TAG:-$GIT_BRANCH}"
-          echo "GIT_BRANCH=${GIT_BRANCH}" >> $GITHUB_OUTPUT
-          echo "GIT_TAG=${GIT_TAG}" >> $GITHUB_OUTPUT
-
   build-and-test:
-    needs: smoke-tests
     runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -44,8 +23,6 @@ jobs:
             runner: ubuntu-24.04-arm
     env:
       CI_ARCH: ${{ matrix.platform }}
-      GIT_BRANCH: ${{ needs.smoke-tests.outputs.GIT_BRANCH }}
-      GIT_TAG: ${{ needs.smoke-tests.outputs.GIT_TAG }}
     steps:
     - name: Checkout Repo
       uses: actions/checkout@v4
@@ -71,4 +48,4 @@ jobs:
 
     - name: Test with tox
       run: |
-        PLATFORM=${{ env.CI_ARCH }} tox -c test/tox.ini
+        CIPLATFORM=${{ env.CI_ARCH }} tox -c test/tox.ini

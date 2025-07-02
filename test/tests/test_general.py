@@ -2,6 +2,7 @@ import pytest
 import os
 
 
+# Adding 5 seconds sleep to give the emulated architecture time to run
 @pytest.mark.parametrize("docker", ["PIHOLE_UID=456"], indirect=True)
 def test_pihole_uid_env_var(docker):
     func = docker.run("echo ${PIHOLE_UID}")
@@ -15,6 +16,7 @@ def test_pihole_uid_env_var(docker):
     assert "456" in func.stdout
 
 
+# Adding 5 seconds sleep to give the emulated architecture time to run
 @pytest.mark.parametrize("docker", ["PIHOLE_GID=456"], indirect=True)
 def test_pihole_gid_env_var(docker):
     func = docker.run("echo ${PIHOLE_GID}")
@@ -34,12 +36,16 @@ def test_pihole_ftl_version(docker):
     assert "Version:" in func.stdout
 
 
+@pytest.mark.skipif(
+    not os.environ.get("CIPLATFORM"),
+    reason="CIPLATFORM environment variable not set, running locally",
+)
 def test_pihole_ftl_architecture(docker):
     func = docker.run("pihole-FTL -vv")
     assert func.rc == 0
     assert "Architecture:" in func.stdout
-    # Get the expected architecture from PLATFORM environment variable
-    platform = os.environ.get("PLATFORM")
+    # Get the expected architecture from CIPLATFORM environment variable
+    platform = os.environ.get("CIPLATFORM")
     assert platform in func.stdout
 
 

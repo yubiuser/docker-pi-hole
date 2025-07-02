@@ -26,11 +26,15 @@ testinfra.backend.docker.DockerBackend.run = run_bash
 # scope='function' uses a new container per test function.
 @pytest.fixture(scope="function")
 def docker(request):
-    # Get platform from environment variable
-    platform = os.environ.get("PLATFORM")
+    # Get platform from environment variable, default to None if not set
+    platform = os.environ.get("CIPLATFORM")
 
     # build the docker run command with args
-    cmd = ["docker", "run", "--platform", platform, "-d", "-t"]
+    cmd = ["docker", "run", "-d", "-t"]
+
+    # Only add platform flag if CIPLATFORM is set
+    if platform:
+        cmd.extend(["--platform", platform])
 
     # Get env vars from parameterization
     env_vars = getattr(request, "param", [])

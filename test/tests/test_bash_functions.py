@@ -1,6 +1,7 @@
 import pytest
 
 
+# Adding 5 seconds sleep to give the emulated architecture time to run
 @pytest.mark.parametrize("docker", ["FTLCONF_webserver_port=999"], indirect=True)
 def test_ftlconf_webserver_port(docker):
     func = docker.run("echo ${FTLCONF_webserver_port}")
@@ -14,6 +15,7 @@ def test_ftlconf_webserver_port(docker):
     assert "999" in func.stdout
 
 
+# Adding 5 seconds sleep to give the emulated architecture time to run
 @pytest.mark.parametrize(
     "docker", ["FTLCONF_dns_upstreams=1.2.3.4;5.6.7.8#1234"], indirect=True
 )
