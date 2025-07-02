@@ -7,7 +7,6 @@ def test_ftlconf_webserver_port(docker):
     assert "999" in func.stdout
     func = docker.run(
         """
-        sleep 5
         pihole-FTL --config webserver.port
         """
     )
@@ -22,7 +21,6 @@ def test_ftlconf_dns_upstreams(docker):
     assert "1.2.3.4;5.6.7.8#1234" in func.stdout
     func = docker.run(
         """
-        sleep 5
         pihole-FTL --config dns.upstreams
         """
     )

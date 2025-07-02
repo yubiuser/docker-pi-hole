@@ -8,7 +8,6 @@ def test_pihole_uid_env_var(docker):
     assert "456" in func.stdout
     func = docker.run(
         """
-        sleep 5
         id -u pihole
         """
     )
@@ -21,7 +20,6 @@ def test_pihole_gid_env_var(docker):
     assert "456" in func.stdout
     func = docker.run(
         """
-        sleep 5
         id -g pihole
         """
     )
