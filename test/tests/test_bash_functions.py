@@ -3,6 +3,8 @@ import pytest
 
 @pytest.mark.parametrize("docker", ["FTLCONF_webserver_port=999"], indirect=True)
 def test_ftlconf_webserver_port(docker):
+    func = docker.run("echo ${FTLCONF_webserver_port}")
+    assert "999" in func.stdout
     func = docker.run("pihole-FTL --config webserver.port")
     assert "999" in func.stdout
 
@@ -11,6 +13,8 @@ def test_ftlconf_webserver_port(docker):
     "docker", ["FTLCONF_dns_upstreams=1.2.3.4;5.6.7.8#1234"], indirect=True
 )
 def test_ftlconf_dns_upstreams(docker):
+    func = docker.run("echo ${FTLCONF_dns_upstreams}")
+    assert "1.2.3.4;5.6.7.8#1234" in func.stdout
     func = docker.run("pihole-FTL --config dns.upstreams")
     assert "[ 1.2.3.4, 5.6.7.8#1234 ]" in func.stdout
 

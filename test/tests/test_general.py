@@ -4,12 +4,16 @@ import os
 
 @pytest.mark.parametrize("docker", ["PIHOLE_UID=456"], indirect=True)
 def test_pihole_uid_env_var(docker):
+    func = docker.run("echo ${PIHOLE_UID}")
+    assert "456" in func.stdout
     func = docker.run("id -u pihole")
     assert "456" in func.stdout
 
 
 @pytest.mark.parametrize("docker", ["PIHOLE_GID=456"], indirect=True)
 def test_pihole_gid_env_var(docker):
+    func = docker.run("echo ${PIHOLE_GID}")
+    assert "456" in func.stdout
     func = docker.run("id -g pihole")
     assert "456" in func.stdout
 
