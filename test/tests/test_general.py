@@ -6,7 +6,12 @@ import os
 def test_pihole_uid_env_var(docker):
     func = docker.run("echo ${PIHOLE_UID}")
     assert "456" in func.stdout
-    func = docker.run("id -u pihole")
+    func = docker.run(
+        """
+        sleep 5
+        id -u pihole
+        """
+    )
     assert "456" in func.stdout
 
 
@@ -14,7 +19,12 @@ def test_pihole_uid_env_var(docker):
 def test_pihole_gid_env_var(docker):
     func = docker.run("echo ${PIHOLE_GID}")
     assert "456" in func.stdout
-    func = docker.run("id -g pihole")
+    func = docker.run(
+        """
+        sleep 5
+        id -g pihole
+        """
+    )
     assert "456" in func.stdout
 
 
